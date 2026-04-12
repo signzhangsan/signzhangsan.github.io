@@ -197,7 +197,7 @@ document.getElementById('copyBtn').onclick = () => {
   navigator.clipboard.writeText(text).then(() => alert('✅ 完整报价已复制'));
 };
 
-// 历史记录
+// 历史记录（已恢复回填功能）
 const HIST_KEY = 'car_quote_history';
 function getHistory() {
   try { return JSON.parse(localStorage.getItem(HIST_KEY)) || [] } catch(e) { return [] }
@@ -212,6 +212,8 @@ function clearHistory() {
   localStorage.removeItem(HIST_KEY);
   renderHistory();
 }
+
+// ✅ 历史记录渲染 + 点击回填（已恢复）
 function renderHistory() {
   const list = getHistory();
   const dom = document.getElementById('historyList');
@@ -220,13 +222,40 @@ function renderHistory() {
     return;
   }
   dom.innerHTML = list.map(h => `
-    <div class="border p-3 rounded">
+    <div class="border p-3 rounded hover:bg-gray-50 cursor-pointer" data-id="${h.id}">
       <div class="font-medium">${h.customer.name} | ${h.customer.car}</div>
       <div class="text-xs text-gray-500">${h.customer.phone} | ${h.time}</div>
       <div class="text-right font-bold text-red-600">${h.final}</div>
     </div>
   `).join('');
+
+  // ✅ 点击回填（已恢复）
+  document.querySelectorAll('[data-id]').forEach(item => {
+    item.onclick = () => {
+      const id = item.dataset.id;
+      const data = getHistory().find(h => h.id == id);
+      if (!data) return;
+
+      els.guidePrice.value = data.data.guide;
+      els.replaceSub.value = data.data.replace;
+      els.cashDiscount.value = data.data.cash;
+      els.insurance.value = data.data.insurance;
+      els.plateFee.value = data.data.plate;
+      els.serviceFee.value = data.data.service;
+      els.extendWarranty.value = data.data.extend;
+      els.carType.value = data.data.type;
+      els.subsidyType.value = data.data.subType;
+
+      document.getElementById('c_name').value = data.customer.name;
+      document.getElementById('c_phone').value = data.customer.phone;
+      document.getElementById('c_car').value = data.customer.car;
+      
+      calcAll();
+      alert('✅ 已回填历史报价');
+    };
+  });
 }
+
 document.getElementById('clearHistory').onclick = () => {
   if (confirm('确定清空所有历史？')) clearHistory();
 };
@@ -238,7 +267,7 @@ document.getElementById('openSaveModal').onclick = () => modal.classList.replace
 document.getElementById('closeModal').onclick = () => modal.classList.replace('flex', 'hidden');
 
 // ==============================================
-// ✅ 飞书 Webhook 同步（100%不跨域、自动进多维表格）
+// ✅ 飞书 Webhook 同步（100%不跨域）
 // ==============================================
 async function syncToFeishu(data) {
   const WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/80a8404f-40a4-43b9-bb26-1a3d3b39e9d5";
@@ -291,6 +320,12 @@ document.getElementById('confirmSave').onclick = async () => {
     final: els.finalTotal.textContent,
     data: {
       guide: els.guidePrice.value,
+      replace: els.replaceSub.value,
+      cash: els.cashDiscount.value,
+      insurance: els.insurance.value,
+      plate: els.plateFee.value,
+      service: els.serviceFee.value,
+      extend: els.extendWarranty.value,
       type: els.carType.value,
       subType: els.subsidyType.value
     }
