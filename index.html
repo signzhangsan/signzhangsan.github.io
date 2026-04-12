@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>汽车报价单 | 内部专用</title>
+<title>汽车报价单 | 自动同步飞书</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-sm">
@@ -16,16 +16,16 @@
         <label class="block mb-1 text-sm font-medium">新车类型</label>
         <select id="carType" class="w-full border p-2 rounded">
           <option value="gas">汽油车</option>
-          <option value="ev" selected>新能源车</option> <!-- 默认选中新能源 -->
+          <option value="ev" selected>新能源车</option>
         </select>
       </div>
       <div>
         <label class="block mb-1 text-sm font-medium">补贴类型</label>
         <select id="subsidyType" class="w-full border p-2 rounded">
-          <option value="none">无补贴</option> <!-- 新增无补贴 -->
+          <option value="none">无补贴</option>
           <option value="scrap">报废更新（国补）</option>
           <option value="replace">置换更新（省补）</option>
-          <option value="local">地方补贴（地补）</option> <!-- 新增地补 -->
+          <option value="local">地方补贴（地补）</option>
         </select>
       </div>
     </div>
@@ -132,7 +132,7 @@ const els = {
   finalTotal: document.getElementById('finalTotal')
 };
 
-// 补贴计算 - 新增无补贴和地补逻辑
+// 补贴计算
 function calcSubsidy(invoice) {
   const type = els.subsidyType.value;
   const isEv = els.carType.value === 'ev';
@@ -140,7 +140,7 @@ function calcSubsidy(invoice) {
   
   switch(type) {
     case 'none':
-      sub = 0; // 无补贴
+      sub = 0;
       break;
     case 'scrap':
       sub = isEv ? Math.min(invoice * 0.12, 20000) : Math.min(invoice * 0.10, 15000);
@@ -149,11 +149,9 @@ function calcSubsidy(invoice) {
       sub = isEv ? Math.min(invoice * 0.08, 15000) : Math.min(invoice * 0.06, 13000);
       break;
     case 'local':
-      // 地补：开票价<10万=2000，≥10万=4000
       sub = invoice < 100000 ? 2000 : 4000;
       break;
   }
-  
   return Math.round(sub);
 }
 
@@ -186,13 +184,11 @@ function calcAll() {
   els.finalTotal.textContent = '¥' + final.toLocaleString();
 }
 
-// 监听
 document.querySelectorAll('input,select').forEach(i => i.addEventListener('input', calcAll));
 calcAll();
 
 // 复制
 document.getElementById('copyBtn').addEventListener('click', () => {
-  // 优化补贴类型显示文本
   const subTypeText = {
     none: '无补贴',
     scrap: '国补(报废)',
@@ -214,7 +210,7 @@ document.getElementById('copyBtn').addEventListener('click', () => {
   navigator.clipboard.writeText(text).then(() => alert('已复制'));
 });
 
-// 历史
+// 历史记录
 const HIST_KEY = 'car_quote_history';
 function getHistory() { try { return JSON.parse(localStorage.getItem(HIST_KEY)) || [] } catch(e) { return [] } }
 function saveHistory(item) { const h = getHistory(); h.unshift({...item, id: Date.now()}); localStorage.setItem(HIST_KEY, JSON.stringify(h)); renderHistory(); }
@@ -263,60 +259,65 @@ const modal = document.getElementById('saveModal');
 document.getElementById('openSaveModal').onclick = () => modal.classList.replace('hidden', 'flex');
 document.getElementById('closeModal').onclick = () => modal.classList.replace('flex', 'hidden');
 
-// 飞书多维表格提交函数（需要替换为你的实际API信息）
+// ==============================================
+// 飞书多维表格提交（已按你最新列名顺序1:1匹配）
+// ==============================================
+async function getFeishuToken() {
+  const res = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      app_id: "cli_a951bdbd57385cc2",
+      app_secret: "RtSoQInoB9OGTY0GZxemhbEnTDWBcI0X"
+    })
+  });
+  const data = await res.json();
+  return data.access_token;
+}
+
 async function submitToFeishuSheet(data) {
-  // 替换为你的飞书多维表格API地址（通过飞书开放平台获取）
-  const FEISHU_API_URL = 'https://open.feishu.cn/open-apis/v4/sheets/data/append';
-  // 替换为你的飞书应用token（需要提前获取）
-  const FEISHU_TOKEN = '替换为你的飞书API Token';
-  
+  const token = await getFeishuToken();
+  const api = "https://open.feishu.cn/open-apis/bitable/v1/apps/F3PnwLnteiMz7Ak4LhHcpjC1nQc/tables/tblDpbaHR7qowqMK/records";
+
+  // 补贴类型文本
+  const subTypeText = {
+    none: "无补贴",
+    scrap: "国补(报废)",
+    replace: "省补(置换)",
+    local: "地补"
+  }[data.data.subType] || "无补贴";
+
   try {
-    const response = await fetch(FEISHU_API_URL, {
-      method: 'POST',
+    await fetch(api, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${FEISHU_TOKEN}`
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({
-        // 替换为你的表格ID和工作表ID
-        spreadsheet_token: '替换为你的表格token',
-        sheet_id: '替换为你的工作表ID',
-        // 按你的表格列顺序组织数据
-        value_range: {
-          values: [
-            [
-              data.customer.name,        // 客户姓名
-              data.customer.phone,       // 联系电话
-              data.customer.car,         // 车型名称
-              data.time,                 // 报价时间
-              data.data.type === 'ev' ? '新能源车' : '汽油车', // 车辆类型
-              {none: '无补贴', scrap: '国补(报废)', replace: '省补(置换)', local: '地补'}[data.data.subType], // 补贴类型
-              data.data.guide,           // 厂家指导价
-              data.final,                // 最终落地价
-              els.invoicePrice.textContent, // 开票价
-              els.taxPrice.textContent,  // 购置税
-              els.policySubsidy.textContent // 政策补贴
-            ]
-          ]
+        fields: {
+          "客户姓名": data.customer.name,
+          "电话": data.customer.phone,
+          "车型": data.customer.car,
+          "报价时间": data.time,
+          "车辆类型": data.data.type === "ev" ? "新能源车" : "汽油车",
+          "补贴类型": subTypeText,
+          "厂家指导价": data.data.guide,
+          "最终落地价": data.final,
+          "开票价": els.invoicePrice.textContent,
+          "购置税": els.taxPrice.textContent,
+          "政策补贴": els.policySubsidy.textContent
         }
       })
     });
-    
-    const result = await response.json();
-    if (response.ok) {
-      console.log('飞书表格提交成功:', result);
-      return true;
-    } else {
-      console.error('飞书表格提交失败:', result);
-      return false;
-    }
-  } catch (error) {
-    console.error('飞书表格提交异常:', error);
+    return true;
+  } catch (e) {
+    console.error("飞书同步失败", e);
     return false;
   }
 }
 
-// 确认保存逻辑（新增飞书提交）
+// 保存 + 自动同步飞书
 document.getElementById('confirmSave').onclick = async () => {
   const name = document.getElementById('c_name').value.trim();
   const phone = document.getElementById('c_phone').value.trim();
@@ -327,7 +328,6 @@ document.getElementById('confirmSave').onclick = async () => {
     return; 
   }
 
-  // 组装保存数据
   const saveData = {
     customer: { name, phone, car },
     time: new Date().toLocaleString(),
@@ -345,20 +345,10 @@ document.getElementById('confirmSave').onclick = async () => {
     }
   };
 
-  // 保存到本地历史
   saveHistory(saveData);
-  
-  // 提交到飞书多维表格（失败不影响本地保存）
-  try {
-    await submitToFeishuSheet(saveData);
-  } catch (e) {
-    console.warn('飞书提交失败:', e);
-    // 可以选择是否提示用户飞书提交失败
-    // alert('本地保存成功，但飞书提交失败，请稍后重试');
-  }
-
+  await submitToFeishuSheet(saveData);
   modal.classList.replace('flex', 'hidden');
-  alert('保存成功');
+  alert('保存成功 ✅ 已同步到飞书多维表格');
 };
 
 renderHistory();
