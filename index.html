@@ -16,14 +16,16 @@
         <label class="block mb-1 text-sm font-medium">新车类型</label>
         <select id="carType" class="w-full border p-2 rounded">
           <option value="gas">汽油车</option>
-          <option value="ev">新能源车</option>
+          <option value="ev" selected>新能源车</option> <!-- 默认选中新能源 -->
         </select>
       </div>
       <div>
         <label class="block mb-1 text-sm font-medium">补贴类型</label>
         <select id="subsidyType" class="w-full border p-2 rounded">
+          <option value="none">无补贴</option> <!-- 新增无补贴 -->
           <option value="scrap">报废更新（国补）</option>
           <option value="replace">置换更新（省补）</option>
+          <option value="local">地方补贴（地补）</option> <!-- 新增地补 -->
         </select>
       </div>
     </div>
@@ -130,16 +132,28 @@ const els = {
   finalTotal: document.getElementById('finalTotal')
 };
 
-// 补贴计算
+// 补贴计算 - 新增无补贴和地补逻辑
 function calcSubsidy(invoice) {
   const type = els.subsidyType.value;
   const isEv = els.carType.value === 'ev';
   let sub = 0;
-  if (type === 'scrap') {
-    sub = isEv ? Math.min(invoice * 0.12, 20000) : Math.min(invoice * 0.10, 15000);
-  } else {
-    sub = isEv ? Math.min(invoice * 0.08, 15000) : Math.min(invoice * 0.06, 13000);
+  
+  switch(type) {
+    case 'none':
+      sub = 0; // 无补贴
+      break;
+    case 'scrap':
+      sub = isEv ? Math.min(invoice * 0.12, 20000) : Math.min(invoice * 0.10, 15000);
+      break;
+    case 'replace':
+      sub = isEv ? Math.min(invoice * 0.08, 15000) : Math.min(invoice * 0.06, 13000);
+      break;
+    case 'local':
+      // 地补：开票价<10万=2000，≥10万=4000
+      sub = invoice < 100000 ? 2000 : 4000;
+      break;
   }
+  
   return Math.round(sub);
 }
 
@@ -178,11 +192,18 @@ calcAll();
 
 // 复制
 document.getElementById('copyBtn').addEventListener('click', () => {
-  const subType = els.subsidyType.value === 'scrap' ? '国补(报废)' : '省补(置换)';
+  // 优化补贴类型显示文本
+  const subTypeText = {
+    none: '无补贴',
+    scrap: '国补(报废)',
+    replace: '省补(置换)',
+    local: '地方补贴(地补)'
+  }[els.subsidyType.value];
+  
   const text = `
 📝 报价单
 客户：${document.getElementById('c_car').value || '未填写'}
-类型：${els.carType.value === 'ev' ? '新能源车' : '汽油车'} | ${subType}
+类型：${els.carType.value === 'ev' ? '新能源车' : '汽油车'} | ${subTypeText}
 指导价：${els.guidePrice.value}
 开票价：${els.invoicePrice.textContent}
 购置税：${els.taxPrice.textContent}
@@ -202,7 +223,7 @@ function delHistory() { localStorage.removeItem(HIST_KEY); renderHistory(); }
 function renderHistory() {
   const list = getHistory();
   const dom = document.getElementById('historyList');
-  if (!list.length) { dom.innerHTML = '<div class="text-gray-400 py-4">暂无历史</div>'; return; }
+  if (!list.length) { dom.innerHTML = '<div class="text-gray-400 text-center py-4">暂无历史报价</div>'; return; }
   dom.innerHTML = list.map(h => `
     <div class="border p-3 rounded hover:bg-gray-50 cursor-pointer history-item" data-id="${h.id}">
       <div class="font-medium text-sm">${h.customer.name} | ${h.customer.car}</div>
@@ -242,13 +263,72 @@ const modal = document.getElementById('saveModal');
 document.getElementById('openSaveModal').onclick = () => modal.classList.replace('hidden', 'flex');
 document.getElementById('closeModal').onclick = () => modal.classList.replace('flex', 'hidden');
 
-document.getElementById('confirmSave').onclick = () => {
+// 飞书多维表格提交函数（需要替换为你的实际API信息）
+async function submitToFeishuSheet(data) {
+  // 替换为你的飞书多维表格API地址（通过飞书开放平台获取）
+  const FEISHU_API_URL = 'https://open.feishu.cn/open-apis/v4/sheets/data/append';
+  // 替换为你的飞书应用token（需要提前获取）
+  const FEISHU_TOKEN = '替换为你的飞书API Token';
+  
+  try {
+    const response = await fetch(FEISHU_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${FEISHU_TOKEN}`
+      },
+      body: JSON.stringify({
+        // 替换为你的表格ID和工作表ID
+        spreadsheet_token: '替换为你的表格token',
+        sheet_id: '替换为你的工作表ID',
+        // 按你的表格列顺序组织数据
+        value_range: {
+          values: [
+            [
+              data.customer.name,        // 客户姓名
+              data.customer.phone,       // 联系电话
+              data.customer.car,         // 车型名称
+              data.time,                 // 报价时间
+              data.data.type === 'ev' ? '新能源车' : '汽油车', // 车辆类型
+              {none: '无补贴', scrap: '国补(报废)', replace: '省补(置换)', local: '地补'}[data.data.subType], // 补贴类型
+              data.data.guide,           // 厂家指导价
+              data.final,                // 最终落地价
+              els.invoicePrice.textContent, // 开票价
+              els.taxPrice.textContent,  // 购置税
+              els.policySubsidy.textContent // 政策补贴
+            ]
+          ]
+        }
+      })
+    });
+    
+    const result = await response.json();
+    if (response.ok) {
+      console.log('飞书表格提交成功:', result);
+      return true;
+    } else {
+      console.error('飞书表格提交失败:', result);
+      return false;
+    }
+  } catch (error) {
+    console.error('飞书表格提交异常:', error);
+    return false;
+  }
+}
+
+// 确认保存逻辑（新增飞书提交）
+document.getElementById('confirmSave').onclick = async () => {
   const name = document.getElementById('c_name').value.trim();
   const phone = document.getElementById('c_phone').value.trim();
   const car = document.getElementById('c_car').value.trim();
-  if (!name || !phone || !car) { alert('请填写完整客户信息'); return; }
+  
+  if (!name || !phone || !car) { 
+    alert('请填写完整客户信息'); 
+    return; 
+  }
 
-  saveHistory({
+  // 组装保存数据
+  const saveData = {
     customer: { name, phone, car },
     time: new Date().toLocaleString(),
     final: els.finalTotal.textContent,
@@ -263,7 +343,20 @@ document.getElementById('confirmSave').onclick = () => {
       type: els.carType.value,
       subType: els.subsidyType.value
     }
-  });
+  };
+
+  // 保存到本地历史
+  saveHistory(saveData);
+  
+  // 提交到飞书多维表格（失败不影响本地保存）
+  try {
+    await submitToFeishuSheet(saveData);
+  } catch (e) {
+    console.warn('飞书提交失败:', e);
+    // 可以选择是否提示用户飞书提交失败
+    // alert('本地保存成功，但飞书提交失败，请稍后重试');
+  }
+
   modal.classList.replace('flex', 'hidden');
   alert('保存成功');
 };
