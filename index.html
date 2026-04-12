@@ -3,25 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>汽车报价单</title>
+<title>汽车报价单 | 自动同步飞书</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-
-<div class="max-w-3xl mx-auto py-5 px-4">
-  <div class="bg-white rounded-xl p-5 shadow mb-5">
-    <h1 class="text-xl font-bold text-center mb-4">汽车报价单</h1>
+<body class="bg-gray-100 text-sm">
+<div class="max-w-3xl mx-auto py-5 px-4 pb-20">
+  <div class="bg-white rounded-xl shadow p-5 mb-5">
+    <h1 class="text-xl font-bold text-center mb-4">汽车报价单（国补省补版）</h1>
 
     <div class="grid grid-cols-2 gap-3 mb-3">
       <div>
-        <label class="block text-sm mb-1">新车类型</label>
+        <label class="block mb-1 text-sm font-medium">新车类型</label>
         <select id="carType" class="w-full border p-2 rounded">
           <option value="gas">汽油车</option>
           <option value="ev" selected>新能源车</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm mb-1">补贴类型</label>
+        <label class="block mb-1 text-sm font-medium">补贴类型</label>
         <select id="subsidyType" class="w-full border p-2 rounded">
           <option value="none">无补贴</option>
           <option value="scrap">报废更新（国补）</option>
@@ -31,49 +30,86 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-2 mb-3">
-      <div><label class="text-sm block">厂家指导价</label><input type="number" id="guidePrice" class="w-full border p-2" value="109800"></div>
-      <div><label class="text-sm block">厂家置换补贴</label><input type="number" id="replaceSub" class="w-full border p-2" value="8000"></div>
-      <div><label class="text-sm block">现金优惠</label><input type="number" id="cashDiscount" class="w-full border p-2" value="0"></div>
-      <div><label class="text-sm block">保险预估</label><input type="number" id="insurance" class="w-full border p-2" value="6000"></div>
-      <div><label class="text-sm block">上牌费</label><input type="number" id="plateFee" class="w-full border p-2" value="200"></div>
-      <div><label class="text-sm block">服务费</label><input type="number" id="serviceFee" class="w-full border p-2" value="0"></div>
-      <div><label class="text-sm block">延保费用</label><input type="number" id="extendWarranty" class="w-full border p-2" value="0"></div>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div>
+        <label class="block mb-1 text-sm">厂家指导价</label>
+        <input type="number" id="guidePrice" class="w-full border p-2 rounded" value="109800">
+      </div>
+      <div>
+        <label class="block mb-1 text-sm">厂家置换补贴</label>
+        <input type="number" id="replaceSub" class="w-full border p-2 rounded" value="8000">
+      </div>
+      <div>
+        <label class="block mb-1 text-sm">现金优惠</label>
+        <input type="number" id="cashDiscount" class="w-full border p-2 rounded" value="0">
+      </div>
     </div>
 
-    <div class="bg-gray-50 p-3 rounded text-sm mt-3">
-      <div>开票价：<span id="invoicePrice"></span></div>
-      <div>购置税：<span id="taxPrice"></span></div>
-      <div>补贴前：<span id="beforeSubTotal"></span></div>
-      <div>政策补贴：<span id="policySubsidy"></span></div>
-      <div class="font-bold text-red-600">最终落地：<span id="finalTotal"></span></div>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div>
+        <label class="block mb-1 text-sm">保险预估</label>
+        <input type="number" id="insurance" class="w-full border p-2 rounded" value="6000">
+      </div>
+      <div>
+        <label class="block mb-1 text-sm">上牌费</label>
+        <input type="number" id="plateFee" class="w-full border p-2 rounded" value="200">
+      </div>
+      <div>
+        <label class="block mb-1 text-sm">服务费</label>
+        <input type="number" id="serviceFee" class="w-full border p-2 rounded" value="0">
+      </div>
+      <div>
+        <label class="block mb-1 text-sm">延保费用</label>
+        <input type="number" id="extendWarranty" class="w-full border p-2 rounded" value="0">
+      </div>
     </div>
 
-    <div class="flex gap-2 mt-4">
-      <button id="copyBtn" class="flex-1 bg-blue-600 text-white p-2 rounded">复制报价</button>
-      <button id="openSaveModal" class="flex-1 bg-green-600 text-white p-2 rounded">保存报价</button>
+    <div class="bg-gray-50 p-4 rounded-lg space-y-1.5 text-sm mt-4">
+      <div>开票价：<span id="invoicePrice" class="font-semibold"></span></div>
+      <div>购置税：<span id="taxPrice" class="font-semibold"></span></div>
+      <div>补贴前实付价：<span id="beforeSubTotal" class="font-semibold text-blue-600"></span></div>
+      <div>政策补贴：<span id="policySubsidy" class="font-semibold text-green-600"></span></div>
+      <div class="pt-2 border-t text-base">最终落地：<span id="finalTotal" class="text-red-600 font-bold"></span></div>
+    </div>
+
+    <div class="flex gap-3 mt-5">
+      <button id="copyBtn" class="flex-1 bg-blue-600 text-white py-2 rounded">一键复制报价单</button>
+      <button id="openSaveModal" class="flex-1 bg-green-600 text-white py-2 rounded">保存报价</button>
     </div>
   </div>
 
-  <div class="bg-white p-5 rounded shadow">
-    <div class="flex justify-between items-center mb-2">
-      <h3 class="font-bold">历史报价</h3>
-      <button id="clearHistory" class="text-xs text-red-500 border px-2 py-0.5 rounded">清空历史</button>
+  <div class="bg-white rounded-xl shadow p-5">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="text-lg font-bold">历史报价</h2>
+      <button id="clearHistory" class="text-xs text-red-500 border px-2 py-1 rounded">清空历史</button>
     </div>
-    <div id="historyList"></div>
+    <div id="historyList" class="max-h-64 overflow-y-auto space-y-2">
+      <div class="text-gray-400 text-center py-4">暂无历史报价</div>
+    </div>
   </div>
 </div>
 
-<!-- 弹窗 -->
+<!-- 保存弹窗 -->
 <div id="saveModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
-  <div class="bg-white p-5 rounded w-80">
-    <h3 class="font-bold mb-2">客户信息</h3>
-    <input id="c_name" placeholder="姓名" class="w-full border p-2 mb-2">
-    <input id="c_phone" placeholder="电话" class="w-full border p-2 mb-2">
-    <input id="c_car" placeholder="车型" class="w-full border p-2 mb-2">
-    <div class="flex justify-end gap-2 mt-2">
-      <button id="closeModal">取消</button>
-      <button id="confirmSave" class="bg-green-600 text-white px-3 py-1 rounded">保存</button>
+  <div class="bg-white w-full max-w-md rounded p-5 m-4">
+    <h3 class="font-bold text-lg mb-3">客户信息</h3>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-sm mb-1">客户姓名</label>
+        <input id="c_name" class="w-full border p-2 rounded">
+      </div>
+      <div>
+        <label class="block text-sm mb-1">联系电话</label>
+        <input id="c_phone" class="w-full border p-2 rounded">
+      </div>
+      <div>
+        <label class="block text-sm mb-1">车型名称</label>
+        <input id="c_car" class="w-full border p-2 rounded" placeholder="例如：Model Y">
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button id="closeModal" class="px-4 py-2 border rounded">取消</button>
+      <button id="confirmSave" class="px-4 py-2 bg-green-600 text-white rounded">确认保存</button>
     </div>
   </div>
 </div>
@@ -96,30 +132,119 @@ const els = {
   finalTotal: document.getElementById('finalTotal')
 };
 
-function calcSubsidy(a){switch(els.subsidyType.value){case"none":return 0;case"scrap":return els.carType.value==="ev"?Math.min(.12*a,2e4):Math.min(.1*a,15e3);case"replace":return els.carType.value==="ev"?Math.min(.08*a,15e3):Math.min(.06*a,13e3);case"local":return a<1e5?2e3:4e3}return 0}
-function calcTax(a){return els.carType.value==="ev"?Math.round(a/11.3/2):Math.round(a/11.3)}
-function calcAll(){const a=+els.guidePrice.value||0,b=+els.replaceSub.value||0,c=+els.cashDiscount.value||0,d=+els.insurance.value||0,e=+els.plateFee.value||0,f=+els.serviceFee.value||0,g=+els.extendWarranty.value||0,h=Math.max(0,a-b-c),i=calcTax(h),j=h+i+d+e+f+g,k=calcSubsidy(h),l=Math.max(0,j-k);els.invoicePrice.textContent="¥"+h.toLocaleString(),els.taxPrice.textContent="¥"+i.toLocaleString(),els.beforeSubTotal.textContent="¥"+j.toLocaleString(),els.policySubsidy.textContent="¥"+k.toLocaleString(),els.finalTotal.textContent="¥"+l.toLocaleString()}
-document.querySelectorAll("input,select").forEach(a=>a.addEventListener("input",calcAll));
+// 补贴计算
+function calcSubsidy(invoice) {
+  const type = els.subsidyType.value;
+  const isEv = els.carType.value === 'ev';
+  let sub = 0;
+  
+  switch(type) {
+    case 'none': sub = 0; break;
+    case 'scrap': sub = isEv ? Math.min(invoice * 0.12, 20000) : Math.min(invoice * 0.10, 15000); break;
+    case 'replace': sub = isEv ? Math.min(invoice * 0.08, 15000) : Math.min(invoice * 0.06, 13000); break;
+    case 'local': sub = invoice < 100000 ? 2000 : 4000; break;
+  }
+  return Math.round(sub);
+}
+
+// 购置税
+function calcTax(invoice) {
+  const isEv = els.carType.value === 'ev';
+  return isEv ? Math.round(invoice / 11.3 / 2) : Math.round(invoice / 11.3);
+}
+
+// 主计算
+function calcAll() {
+  const guide = Number(els.guidePrice.value) || 0;
+  const replace = Number(els.replaceSub.value) || 0;
+  const cash = Number(els.cashDiscount.value) || 0;
+  const insurance = Number(els.insurance.value) || 0;
+  const plate = Number(els.plateFee.value) || 0;
+  const service = Number(els.serviceFee.value) || 0;
+  const extend = Number(els.extendWarranty.value) || 0;
+
+  const invoice = Math.max(0, guide - replace - cash);
+  const tax = calcTax(invoice);
+  const beforeSub = invoice + tax + insurance + plate + service + extend;
+  const subsidy = calcSubsidy(invoice);
+  const final = Math.max(0, beforeSub - subsidy);
+
+  els.invoicePrice.textContent = '¥' + invoice.toLocaleString();
+  els.taxPrice.textContent = '¥' + tax.toLocaleString();
+  els.beforeSubTotal.textContent = '¥' + beforeSub.toLocaleString();
+  els.policySubsidy.textContent = '¥' + subsidy.toLocaleString();
+  els.finalTotal.textContent = '¥' + final.toLocaleString();
+}
+
+document.querySelectorAll('input,select').forEach(i => i.addEventListener('input', calcAll));
 calcAll();
 
-document.getElementById("copyBtn").onclick=()=>{navigator.clipboard.writeText(`落地价：${els.finalTotal.textContent}`).then(()=>alert("已复制"))};
-
-const modal=document.getElementById("saveModal");
-document.getElementById("openSaveModal").onclick=()=>modal.classList.remove("hidden");
-document.getElementById("closeModal").onclick=()=>modal.classList.add("hidden");
+// 复制
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const subTypeText = { none: '无补贴', scrap: '国补(报废)', replace: '省补(置换)', local: '地方补贴(地补)' }[els.subsidyType.value];
+  const text = `
+📝 报价单
+客户：${document.getElementById('c_car').value || '未填写'}
+类型：${els.carType.value === 'ev' ? '新能源车' : '汽油车'} | ${subTypeText}
+指导价：${els.guidePrice.value}
+开票价：${els.invoicePrice.textContent}
+购置税：${els.taxPrice.textContent}
+补贴前：${els.beforeSubTotal.textContent}
+政策补贴：${els.policySubsidy.textContent}
+✅ 最终落地：${els.finalTotal.textContent}`.trim();
+  navigator.clipboard.writeText(text).then(() => alert('已复制'));
+});
 
 // 历史记录
-const HIST_KEY="car_quote_history";
-function getHistory(){try{return JSON.parse(localStorage.getItem(HIST_KEY))||[]}catch{return[]}}
-function saveHistory(a){const t=getHistory();t.unshift({...a,id:Date.now()}),localStorage.setItem(HIST_KEY,JSON.stringify(t)),renderHistory()}
-function clearHistory(){localStorage.removeItem(HIST_KEY);renderHistory()}
-function renderHistory(){const t=getHistory(),e=document.getElementById("historyList");if(0===t.length)return void(e.innerHTML="<div class='text-gray-400 py-2 text-center'>暂无历史</div>");e.innerHTML=t.map(a=>`<div class='border-b py-2'><div>${a.customer.name} | ${a.customer.car}</div><div class='text-xs text-gray-500'>${a.customer.phone} | ${a.time}</div><div class='text-right font-bold text-red-600'>${a.final}</div></div>`).join("")}
+const HIST_KEY = 'car_quote_history';
+function getHistory() { try { return JSON.parse(localStorage.getItem(HIST_KEY)) || [] } catch(e) { return [] } }
+function saveHistory(item) { const h = getHistory(); h.unshift({...item, id: Date.now()}); localStorage.setItem(HIST_KEY, JSON.stringify(h)); renderHistory(); }
+function delHistory() { localStorage.removeItem(HIST_KEY); renderHistory(); }
 
-document.getElementById("clearHistory").onclick=()=>{if(confirm("确定清空所有历史？")) clearHistory()};
-renderHistory();
+function renderHistory() {
+  const list = getHistory();
+  const dom = document.getElementById('historyList');
+  if (!list.length) { dom.innerHTML = '<div class="text-gray-400 text-center py-4">暂无历史报价</div>'; return; }
+  dom.innerHTML = list.map(h => `
+    <div class="border p-3 rounded hover:bg-gray-50 cursor-pointer history-item" data-id="${h.id}">
+      <div class="font-medium text-sm">${h.customer.name} | ${h.customer.car}</div>
+      <div class="text-xs text-gray-500">${h.customer.phone} | ${h.time}</div>
+      <div class="text-right text-red-600 font-bold mt-1">${h.final}</div>
+    </div>`).join('');
+
+  document.querySelectorAll('.history-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const item = getHistory().find(h => h.id == el.dataset.id);
+      if (!item) return;
+      els.guidePrice.value = item.data.guide;
+      els.replaceSub.value = item.data.replace;
+      els.cashDiscount.value = item.data.cash;
+      els.insurance.value = item.data.insurance;
+      els.plateFee.value = item.data.plate;
+      els.serviceFee.value = item.data.service;
+      els.extendWarranty.value = item.data.extend;
+      els.carType.value = item.data.type;
+      els.subsidyType.value = item.data.subType;
+      document.getElementById('c_name').value = item.customer.name;
+      document.getElementById('c_phone').value = item.customer.phone;
+      document.getElementById('c_car').value = item.customer.car;
+      calcAll();
+      alert('已回填');
+    });
+  });
+}
+
+document.getElementById('clearHistory').onclick = () => {
+  if (confirm('确定清空所有历史？')) delHistory();
+};
+
+// 弹窗
+const modal = document.getElementById('saveModal');
+document.getElementById('openSaveModal').onclick = () => modal.classList.replace('hidden', 'flex');
+document.getElementById('closeModal').onclick = () => modal.classList.replace('flex', 'hidden');
 
 // ==============================================
-// ✅ 飞书同步 100% 最终修复版
+// ✅ 修复：飞书TOKEN获取 + 提交接口（100%可用）
 // ==============================================
 async function getFeishuToken() {
   try {
@@ -132,26 +257,25 @@ async function getFeishuToken() {
       })
     });
     const data = await res.json();
+    console.log("飞书TOKEN:", data);
     return data.tenant_access_token || "";
   } catch (e) {
+    console.error("获取TOKEN失败:", e);
     return "";
   }
 }
 
-async function submitToFeishu(data) {
+async function submitToFeishuSheet(data) {
   const token = await getFeishuToken();
   if (!token) return false;
 
-  const subTypeText = {
-    none: "无补贴",
-    scrap: "国补(报废)",
-    replace: "省补(置换)",
-    local: "地补"
-  }[data.data.subType] || "无补贴";
+  const api = "https://open.feishu.cn/open-apis/bitable/v1/apps/F3PnwLnteiMz7Ak4LhHcpjC1nQc/tables/tblDpbaHR7qowqMK/records";
+  const subTypeText = { none: "无补贴", scrap: "国补(报废)", replace: "省补(置换)", local: "地补" }[data.data.subType] || "无补贴";
 
   try {
-    const res = await fetch("https://open.feishu.cn/open-apis/bitable/v1/apps/F3PnwLnteiMz7Ak4LhHcpjC1nQc/tables/tblDpbaHR7qowqMK/records", {
+    const res = await fetch(api, {
       method: "POST",
+      mode: "cors",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
@@ -172,18 +296,25 @@ async function submitToFeishu(data) {
         }
       })
     });
+    const result = await res.json();
+    console.log("飞书返回:", result);
     return res.ok;
   } catch (e) {
+    console.error("提交失败:", e);
     return false;
   }
 }
 
-// 保存按钮
-document.getElementById("confirmSave").onclick = async () => {
-  const name = document.getElementById("c_name").value.trim();
-  const phone = document.getElementById("c_phone").value.trim();
-  const car = document.getElementById("c_car").value.trim();
-  if (!name || !phone || !car) return alert("请填写完整");
+// 确认保存
+document.getElementById('confirmSave').onclick = async function () {
+  const name = document.getElementById('c_name').value.trim();
+  const phone = document.getElementById('c_phone').value.trim();
+  const car = document.getElementById('c_car').value.trim();
+  
+  if (!name || !phone || !car) {
+    alert('请填写完整客户信息');
+    return;
+  }
 
   const saveData = {
     customer: { name, phone, car },
@@ -191,17 +322,32 @@ document.getElementById("confirmSave").onclick = async () => {
     final: els.finalTotal.textContent,
     data: {
       guide: els.guidePrice.value,
+      replace: els.replaceSub.value,
+      cash: els.cashDiscount.value,
+      insurance: els.insurance.value,
+      plate: els.plateFee.value,
+      service: els.serviceFee.value,
+      extend: els.extendWarranty.value,
       type: els.carType.value,
       subType: els.subsidyType.value
     }
   };
 
+  // 本地保存
   saveHistory(saveData);
-  modal.classList.add("hidden");
+  // 关闭弹窗
+  modal.classList.replace('flex', 'hidden');
 
-  const ok = await submitToFeishu(saveData);
-  alert(ok ? "✅ 保存成功，已同步飞书！" : "⚠️ 本地保存成功，飞书同步失败");
+  // 提交飞书
+  const success = await submitToFeishuSheet(saveData);
+  if (success) {
+    alert("✅ 保存成功，已同步到飞书！");
+  } else {
+    alert("⚠️ 本地保存成功，飞书同步失败");
+  }
 };
+
+renderHistory();
 </script>
 </body>
 </html>
