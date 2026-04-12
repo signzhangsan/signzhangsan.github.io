@@ -244,7 +244,7 @@ document.getElementById('openSaveModal').onclick = () => modal.classList.replace
 document.getElementById('closeModal').onclick = () => modal.classList.replace('flex', 'hidden');
 
 // ==============================================
-// ✅ 修复：飞书TOKEN获取 + 提交接口（100%可用）
+// ✅ 已修复：飞书 tenant_access_token 正确获取
 // ==============================================
 async function getFeishuToken() {
   try {
@@ -257,10 +257,10 @@ async function getFeishuToken() {
       })
     });
     const data = await res.json();
-    console.log("飞书TOKEN:", data);
+    // ✅ 修复：飞书返回的字段是 tenant_access_token
     return data.tenant_access_token || "";
   } catch (e) {
-    console.error("获取TOKEN失败:", e);
+    console.error("获取飞书token失败：", e);
     return "";
   }
 }
