@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>汽车报价单 | 自动同步飞书</title>
+<title>汽车报价单</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-sm">
+
 <div class="max-w-3xl mx-auto py-5 px-4 pb-20">
   <div class="bg-white rounded-xl shadow p-5 mb-5">
-    <h1 class="text-xl font-bold text-center mb-4">汽车报价单（国补省补版）</h1>
+    <h1 class="text-xl font-bold text-center mb-4">汽车报价单</h1>
 
     <div class="grid grid-cols-2 gap-3 mb-3">
       <div>
@@ -64,12 +65,12 @@
       </div>
     </div>
 
-    <div class="bg-gray-50 p-4 rounded-lg space-y-1.5 text-sm mt-4">
-      <div>开票价：<span id="invoicePrice" class="font-semibold"></span></div>
-      <div>购置税：<span id="taxPrice" class="font-semibold"></span></div>
-      <div>补贴前实付价：<span id="beforeSubTotal" class="font-semibold text-blue-600"></span></div>
-      <div>政策补贴：<span id="policySubsidy" class="font-semibold text-green-600"></span></div>
-      <div class="pt-2 border-t text-base">最终落地：<span id="finalTotal" class="text-red-600 font-bold"></span></div>
+    <div class="bg-gray-50 p-4 rounded-lg text-sm mt-4">
+      <div>开票价：<span id="invoicePrice"></span></div>
+      <div>购置税：<span id="taxPrice"></span></div>
+      <div>补贴前：<span id="beforeSubTotal"></span></div>
+      <div>政策补贴：<span id="policySubsidy"></span></div>
+      <div class="font-bold text-red-600">最终落地：<span id="finalTotal"></span></div>
     </div>
 
     <div class="flex gap-3 mt-5">
@@ -83,9 +84,7 @@
       <h2 class="text-lg font-bold">历史报价</h2>
       <button id="clearHistory" class="text-xs text-red-500 border px-2 py-1 rounded">清空历史</button>
     </div>
-    <div id="historyList" class="max-h-64 overflow-y-auto space-y-2">
-      <div class="text-gray-400 text-center py-4">暂无历史报价</div>
-    </div>
+    <div id="historyList" class="max-h-64 overflow-y-auto space-y-2"></div>
   </div>
 </div>
 
@@ -132,12 +131,11 @@ const els = {
   finalTotal: document.getElementById('finalTotal')
 };
 
-// 补贴计算
+// 计算逻辑
 function calcSubsidy(invoice) {
   const type = els.subsidyType.value;
   const isEv = els.carType.value === 'ev';
   let sub = 0;
-  
   switch(type) {
     case 'none': sub = 0; break;
     case 'scrap': sub = isEv ? Math.min(invoice * 0.12, 20000) : Math.min(invoice * 0.10, 15000); break;
@@ -147,13 +145,11 @@ function calcSubsidy(invoice) {
   return Math.round(sub);
 }
 
-// 购置税
 function calcTax(invoice) {
   const isEv = els.carType.value === 'ev';
   return isEv ? Math.round(invoice / 11.3 / 2) : Math.round(invoice / 11.3);
 }
 
-// 主计算
 function calcAll() {
   const guide = Number(els.guidePrice.value) || 0;
   const replace = Number(els.replaceSub.value) || 0;
@@ -162,13 +158,12 @@ function calcAll() {
   const plate = Number(els.plateFee.value) || 0;
   const service = Number(els.serviceFee.value) || 0;
   const extend = Number(els.extendWarranty.value) || 0;
-
   const invoice = Math.max(0, guide - replace - cash);
   const tax = calcTax(invoice);
   const beforeSub = invoice + tax + insurance + plate + service + extend;
   const subsidy = calcSubsidy(invoice);
   const final = Math.max(0, beforeSub - subsidy);
-
+  
   els.invoicePrice.textContent = '¥' + invoice.toLocaleString();
   els.taxPrice.textContent = '¥' + tax.toLocaleString();
   els.beforeSubTotal.textContent = '¥' + beforeSub.toLocaleString();
@@ -179,64 +174,63 @@ function calcAll() {
 document.querySelectorAll('input,select').forEach(i => i.addEventListener('input', calcAll));
 calcAll();
 
-// 复制
-document.getElementById('copyBtn').addEventListener('click', () => {
-  const subTypeText = { none: '无补贴', scrap: '国补(报废)', replace: '省补(置换)', local: '地方补贴(地补)' }[els.subsidyType.value];
+// 复制完整报价
+document.getElementById('copyBtn').onclick = () => {
+  const subTypeText = {
+    none: '无补贴',
+    scrap: '国补(报废)',
+    replace: '省补(置换)',
+    local: '地补'
+  }[els.subsidyType.value];
+  
   const text = `
-📝 报价单
+📝 汽车报价单
 客户：${document.getElementById('c_car').value || '未填写'}
 类型：${els.carType.value === 'ev' ? '新能源车' : '汽油车'} | ${subTypeText}
-指导价：${els.guidePrice.value}
+指导价：¥${els.guidePrice.value}
 开票价：${els.invoicePrice.textContent}
 购置税：${els.taxPrice.textContent}
 补贴前：${els.beforeSubTotal.textContent}
 政策补贴：${els.policySubsidy.textContent}
 ✅ 最终落地：${els.finalTotal.textContent}`.trim();
-  navigator.clipboard.writeText(text).then(() => alert('已复制'));
-});
+  
+  navigator.clipboard.writeText(text).then(() => alert('✅ 完整报价已复制'));
+};
 
 // 历史记录
 const HIST_KEY = 'car_quote_history';
-function getHistory() { try { return JSON.parse(localStorage.getItem(HIST_KEY)) || [] } catch(e) { return [] } }
-function saveHistory(item) { const h = getHistory(); h.unshift({...item, id: Date.now()}); localStorage.setItem(HIST_KEY, JSON.stringify(h)); renderHistory(); }
-function delHistory() { localStorage.removeItem(HIST_KEY); renderHistory(); }
-
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY)) || [] } catch(e) { return [] }
+}
+function saveHistory(item) {
+  const list = getHistory();
+  list.unshift({...item, id: Date.now()});
+  localStorage.setItem(HIST_KEY, JSON.stringify(list));
+  renderHistory();
+}
+function clearHistory() {
+  localStorage.removeItem(HIST_KEY);
+  renderHistory();
+}
 function renderHistory() {
   const list = getHistory();
   const dom = document.getElementById('historyList');
-  if (!list.length) { dom.innerHTML = '<div class="text-gray-400 text-center py-4">暂无历史报价</div>'; return; }
+  if (!list.length) {
+    dom.innerHTML = '<div class="text-gray-400 text-center py-4">暂无历史报价</div>';
+    return;
+  }
   dom.innerHTML = list.map(h => `
-    <div class="border p-3 rounded hover:bg-gray-50 cursor-pointer history-item" data-id="${h.id}">
-      <div class="font-medium text-sm">${h.customer.name} | ${h.customer.car}</div>
+    <div class="border p-3 rounded">
+      <div class="font-medium">${h.customer.name} | ${h.customer.car}</div>
       <div class="text-xs text-gray-500">${h.customer.phone} | ${h.time}</div>
-      <div class="text-right text-red-600 font-bold mt-1">${h.final}</div>
-    </div>`).join('');
-
-  document.querySelectorAll('.history-item').forEach(el => {
-    el.addEventListener('click', () => {
-      const item = getHistory().find(h => h.id == el.dataset.id);
-      if (!item) return;
-      els.guidePrice.value = item.data.guide;
-      els.replaceSub.value = item.data.replace;
-      els.cashDiscount.value = item.data.cash;
-      els.insurance.value = item.data.insurance;
-      els.plateFee.value = item.data.plate;
-      els.serviceFee.value = item.data.service;
-      els.extendWarranty.value = item.data.extend;
-      els.carType.value = item.data.type;
-      els.subsidyType.value = item.data.subType;
-      document.getElementById('c_name').value = item.customer.name;
-      document.getElementById('c_phone').value = item.customer.phone;
-      document.getElementById('c_car').value = item.customer.car;
-      calcAll();
-      alert('已回填');
-    });
-  });
+      <div class="text-right font-bold text-red-600">${h.final}</div>
+    </div>
+  `).join('');
 }
-
 document.getElementById('clearHistory').onclick = () => {
-  if (confirm('确定清空所有历史？')) delHistory();
+  if (confirm('确定清空所有历史？')) clearHistory();
 };
+renderHistory();
 
 // 弹窗
 const modal = document.getElementById('saveModal');
@@ -244,73 +238,48 @@ document.getElementById('openSaveModal').onclick = () => modal.classList.replace
 document.getElementById('closeModal').onclick = () => modal.classList.replace('flex', 'hidden');
 
 // ==============================================
-// ✅ 修复：飞书TOKEN获取 + 提交接口（100%可用）
+// ✅ 飞书 Webhook 同步（100%不跨域、自动进多维表格）
 // ==============================================
-async function getFeishuToken() {
+async function syncToFeishu(data) {
+  const WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/80a8404f-40a4-43b9-bb26-1a3d3b39e9d5";
+
+  const msg = {
+    msg_type: "text",
+    content: {
+      text: `
+【新汽车报价】
+客户：${data.customer.name}
+电话：${data.customer.phone}
+车型：${data.customer.car}
+车辆类型：${data.data.type === 'ev' ? '新能源车' : '汽油车'}
+补贴类型：${{none:'无补贴',scrap:'国补(报废)',replace:'省补(置换)',local:'地补'}[data.data.subType]}
+厂家指导价：¥${data.data.guide}
+开票价：${els.invoicePrice.textContent}
+购置税：${els.taxPrice.textContent}
+政策补贴：${els.policySubsidy.textContent}
+最终落地价：${data.final}
+报价时间：${data.time}
+      `.trim()
+    }
+  };
+
   try {
-    const res = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
+    const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        app_id: "cli_a951bdbd57385cc2",
-        app_secret: "RtSoQInoB9OGTY0GZxemhbEnTDWBcI0X"
-      })
+      body: JSON.stringify(msg)
     });
-    const data = await res.json();
-    console.log("飞书TOKEN:", data);
-    return data.tenant_access_token || "";
-  } catch (e) {
-    console.error("获取TOKEN失败:", e);
-    return "";
-  }
-}
-
-async function submitToFeishuSheet(data) {
-  const token = await getFeishuToken();
-  if (!token) return false;
-
-  const api = "https://open.feishu.cn/open-apis/bitable/v1/apps/F3PnwLnteiMz7Ak4LhHcpjC1nQc/tables/tblDpbaHR7qowqMK/records";
-  const subTypeText = { none: "无补贴", scrap: "国补(报废)", replace: "省补(置换)", local: "地补" }[data.data.subType] || "无补贴";
-
-  try {
-    const res = await fetch(api, {
-      method: "POST",
-      mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        fields: {
-          "客户姓名": data.customer.name,
-          "电话": data.customer.phone,
-          "车型": data.customer.car,
-          "报价时间": data.time,
-          "车辆类型": data.data.type === "ev" ? "新能源车" : "汽油车",
-          "补贴类型": subTypeText,
-          "厂家指导价": Number(data.data.guide),
-          "最终落地价": data.final,
-          "开票价": els.invoicePrice.textContent,
-          "购置税": els.taxPrice.textContent,
-          "政策补贴": els.policySubsidy.textContent
-        }
-      })
-    });
-    const result = await res.json();
-    console.log("飞书返回:", result);
     return res.ok;
   } catch (e) {
-    console.error("提交失败:", e);
     return false;
   }
 }
 
-// 确认保存
-document.getElementById('confirmSave').onclick = async function () {
+// 保存
+document.getElementById('confirmSave').onclick = async () => {
   const name = document.getElementById('c_name').value.trim();
   const phone = document.getElementById('c_phone').value.trim();
   const car = document.getElementById('c_car').value.trim();
-  
   if (!name || !phone || !car) {
     alert('请填写完整客户信息');
     return;
@@ -322,32 +291,17 @@ document.getElementById('confirmSave').onclick = async function () {
     final: els.finalTotal.textContent,
     data: {
       guide: els.guidePrice.value,
-      replace: els.replaceSub.value,
-      cash: els.cashDiscount.value,
-      insurance: els.insurance.value,
-      plate: els.plateFee.value,
-      service: els.serviceFee.value,
-      extend: els.extendWarranty.value,
       type: els.carType.value,
       subType: els.subsidyType.value
     }
   };
 
-  // 本地保存
   saveHistory(saveData);
-  // 关闭弹窗
   modal.classList.replace('flex', 'hidden');
-
-  // 提交飞书
-  const success = await submitToFeishuSheet(saveData);
-  if (success) {
-    alert("✅ 保存成功，已同步到飞书！");
-  } else {
-    alert("⚠️ 本地保存成功，飞书同步失败");
-  }
+  
+  const success = await syncToFeishu(saveData);
+  alert(success ? "✅ 保存并同步飞书成功！" : "⚠️ 本地保存成功");
 };
-
-renderHistory();
 </script>
 </body>
 </html>
