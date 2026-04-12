@@ -139,18 +139,10 @@ function calcSubsidy(invoice) {
   let sub = 0;
   
   switch(type) {
-    case 'none':
-      sub = 0;
-      break;
-    case 'scrap':
-      sub = isEv ? Math.min(invoice * 0.12, 20000) : Math.min(invoice * 0.10, 15000);
-      break;
-    case 'replace':
-      sub = isEv ? Math.min(invoice * 0.08, 15000) : Math.min(invoice * 0.06, 13000);
-      break;
-    case 'local':
-      sub = invoice < 100000 ? 2000 : 4000;
-      break;
+    case 'none': sub = 0; break;
+    case 'scrap': sub = isEv ? Math.min(invoice * 0.12, 20000) : Math.min(invoice * 0.10, 15000); break;
+    case 'replace': sub = isEv ? Math.min(invoice * 0.08, 15000) : Math.min(invoice * 0.06, 13000); break;
+    case 'local': sub = invoice < 100000 ? 2000 : 4000; break;
   }
   return Math.round(sub);
 }
@@ -189,13 +181,7 @@ calcAll();
 
 // 复制
 document.getElementById('copyBtn').addEventListener('click', () => {
-  const subTypeText = {
-    none: '无补贴',
-    scrap: '国补(报废)',
-    replace: '省补(置换)',
-    local: '地方补贴(地补)'
-  }[els.subsidyType.value];
-  
+  const subTypeText = { none: '无补贴', scrap: '国补(报废)', replace: '省补(置换)', local: '地方补贴(地补)' }[els.subsidyType.value];
   const text = `
 📝 报价单
 客户：${document.getElementById('c_car').value || '未填写'}
@@ -205,8 +191,7 @@ document.getElementById('copyBtn').addEventListener('click', () => {
 购置税：${els.taxPrice.textContent}
 补贴前：${els.beforeSubTotal.textContent}
 政策补贴：${els.policySubsidy.textContent}
-✅ 最终落地：${els.finalTotal.textContent}
-  `.trim();
+✅ 最终落地：${els.finalTotal.textContent}`.trim();
   navigator.clipboard.writeText(text).then(() => alert('已复制'));
 });
 
@@ -225,8 +210,7 @@ function renderHistory() {
       <div class="font-medium text-sm">${h.customer.name} | ${h.customer.car}</div>
       <div class="text-xs text-gray-500">${h.customer.phone} | ${h.time}</div>
       <div class="text-right text-red-600 font-bold mt-1">${h.final}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 
   document.querySelectorAll('.history-item').forEach(el => {
     el.addEventListener('click', () => {
@@ -251,7 +235,7 @@ function renderHistory() {
 }
 
 document.getElementById('clearHistory').onclick = () => {
-  if (confirm('确定清空所有历史？')) { delHistory(); }
+  if (confirm('确定清空所有历史？')) delHistory();
 };
 
 // 弹窗
@@ -260,35 +244,34 @@ document.getElementById('openSaveModal').onclick = () => modal.classList.replace
 document.getElementById('closeModal').onclick = () => modal.classList.replace('flex', 'hidden');
 
 // ==============================================
-// 飞书多维表格提交（已按你最新列名顺序1:1匹配）
+// ✅ 飞书提交（已修复：弹窗关闭 + 成功/失败提示）
 // ==============================================
 async function getFeishuToken() {
-  const res = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      app_id: "cli_a951bdbd57385cc2",
-      app_secret: "RtSoQInoB9OGTY0GZxemhbEnTDWBcI0X"
-    })
-  });
-  const data = await res.json();
-  return data.access_token;
+  try {
+    const res = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        app_id: "cli_a951bdbd57385cc2",
+        app_secret: "RtSoQInoB9OGTY0GZxemhbEnTDWBcI0X"
+      })
+    });
+    const data = await res.json();
+    return data.tenant_access_token || "";
+  } catch (e) {
+    return "";
+  }
 }
 
 async function submitToFeishuSheet(data) {
   const token = await getFeishuToken();
-  const api = "https://open.feishu.cn/open-apis/bitable/v1/apps/F3PnwLnteiMz7Ak4LhHcpjC1nQc/tables/tblDpbaHR7qowqMK/records";
+  if (!token) return false;
 
-  // 补贴类型文本
-  const subTypeText = {
-    none: "无补贴",
-    scrap: "国补(报废)",
-    replace: "省补(置换)",
-    local: "地补"
-  }[data.data.subType] || "无补贴";
+  const api = "https://open.feishu.cn/open-apis/bitable/v1/apps/F3PnwLnteiMz7Ak4LhHcpjC1nQc/tables/tblDpbaHR7qowqMK/records";
+  const subTypeText = { none: "无补贴", scrap: "国补(报废)", replace: "省补(置换)", local: "地补" }[data.data.subType] || "无补贴";
 
   try {
-    await fetch(api, {
+    const res = await fetch(api, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -310,22 +293,21 @@ async function submitToFeishuSheet(data) {
         }
       })
     });
-    return true;
+    return res.ok;
   } catch (e) {
-    console.error("飞书同步失败", e);
     return false;
   }
 }
 
-// 保存 + 自动同步飞书
-document.getElementById('confirmSave').onclick = async () => {
+// 确认保存（修复：弹窗自动关闭 + 飞书提示）
+document.getElementById('confirmSave').onclick = async function () {
   const name = document.getElementById('c_name').value.trim();
   const phone = document.getElementById('c_phone').value.trim();
   const car = document.getElementById('c_car').value.trim();
   
-  if (!name || !phone || !car) { 
-    alert('请填写完整客户信息'); 
-    return; 
+  if (!name || !phone || !car) {
+    alert('请填写完整客户信息');
+    return;
   }
 
   const saveData = {
@@ -345,10 +327,19 @@ document.getElementById('confirmSave').onclick = async () => {
     }
   };
 
+  // 先本地保存
   saveHistory(saveData);
-  await submitToFeishuSheet(saveData);
+
+  // 关闭弹窗（第一时间关闭）
   modal.classList.replace('flex', 'hidden');
-  alert('保存成功 ✅ 已同步到飞书多维表格');
+
+  // 提交飞书并提示
+  const success = await submitToFeishuSheet(saveData);
+  if (success) {
+    alert("✅ 保存成功，已同步到飞书多维表格！");
+  } else {
+    alert("⚠️ 本地保存成功，但飞书同步失败，请检查权限或网络");
+  }
 };
 
 renderHistory();
