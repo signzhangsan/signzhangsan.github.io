@@ -269,40 +269,40 @@ document.getElementById('closeModal').onclick = () => modal.classList.replace('f
 // ==============================================
 // ✅ 飞书 Webhook 同步（100%不跨域）
 // ==============================================
- //async function syncToFeishu(data) {
-//  const WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/80a8404f-40a4-43b9-bb26-1a3d3b39e9d5";
+ async function syncToFeishu(data) {
+  const WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/80a8404f-40a4-43b9-bb26-1a3d3b39e9d5";
 
-//  const msg = {
-//    msg_type: "text",
-//    content: {
-//      text: `
-//【新汽车报价】
-//客户：${data.customer.name}
-//电话：${data.customer.phone}
-//车型：${data.customer.car}
-//车辆类型：${data.data.type === 'ev' ? '新能源车' : '汽油车'}
-//补贴类型：${{none:'无补贴',scrap:'国补(报废)',replace:'省补(置换)',local:'地补'}[data.data.subType]}
-//厂家指导价：¥${data.data.guide}
-//开票价：${els.invoicePrice.textContent}
-//购置税：${els.taxPrice.textContent}
-//政策补贴：${els.policySubsidy.textContent}
-//最终落地价：${data.final}
-//报价时间：${data.time}
- //     `.trim()
- //   }
- // };
+  const msg = {
+    msg_type: "text",
+    content: {
+      text: `
+【新汽车报价】
+客户：${data.customer.name}
+电话：${data.customer.phone}
+车型：${data.customer.car}
+车辆类型：${data.data.type === 'ev' ? '新能源车' : '汽油车'}
+补贴类型：${{none:'无补贴',scrap:'国补(报废)',replace:'省补(置换)',local:'地补'}[data.data.subType]}
+厂家指导价：¥${data.data.guide}
+开票价：${els.invoicePrice.textContent}
+购置税：${els.taxPrice.textContent}
+政策补贴：${els.policySubsidy.textContent}
+最终落地价：${data.final}
+报价时间：${data.time}
+      `.trim()
+    }
+  };
 
-  //try {
-   // const res = await fetch(WEBHOOK_URL, {
-  //    method: "POST",
-  //    headers: { "Content-Type": "application/json" },
-  //    body: JSON.stringify(msg)
-  //  });
-  //  return res.ok;
-  //} catch (e) {
-  //  return false;
- // }
-//}
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(msg)
+    });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
 
 // 保存
 document.getElementById('confirmSave').onclick = async () => {
@@ -334,9 +334,9 @@ document.getElementById('confirmSave').onclick = async () => {
   saveHistory(saveData);
   modal.classList.replace('flex', 'hidden');
   
-//  const success = await syncToFeishu(saveData);
-//  alert(success ? "✅ 保存并同步飞书成功！" : "⚠️ 本地保存成功");
-//};
+  const success = await syncToFeishu(saveData);
+  alert(success ? "✅ 保存并同步飞书成功！" : "⚠️ 本地保存成功");
+};
 
   /**
  * 提交数据到 Cloudflare Worker（安全方式）
