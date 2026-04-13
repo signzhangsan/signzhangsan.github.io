@@ -305,34 +305,34 @@ document.getElementById('closeModal').onclick = () => modal.classList.replace('f
 //}
 
 // 保存
-//document.getElementById('confirmSave').onclick = async () => {
- // const name = document.getElementById('c_name').value.trim();
-//  const phone = document.getElementById('c_phone').value.trim();
-//  const car = document.getElementById('c_car').value.trim();
- // if (!name || !phone || !car) {
-   // alert('请填写完整客户信息');
-   // return;
-  //}
+document.getElementById('confirmSave').onclick = async () => {
+  const name = document.getElementById('c_name').value.trim();
+  const phone = document.getElementById('c_phone').value.trim();
+  const car = document.getElementById('c_car').value.trim();
+  if (!name || !phone || !car) {
+    alert('请填写完整客户信息');
+    return;
+  }
 
-//  const saveData = {
-//    customer: { name, phone, car },
-//    time: new Date().toLocaleString(),
-//    final: els.finalTotal.textContent,
-//    data: {
-//      guide: els.guidePrice.value,
-//      replace: els.replaceSub.value,
-//      cash: els.cashDiscount.value,
-//      insurance: els.insurance.value,
-//      plate: els.plateFee.value,
-//      service: els.serviceFee.value,
-//      extend: els.extendWarranty.value,
-//      type: els.carType.value,
-//      subType: els.subsidyType.value
-//    }
-//  };
+  const saveData = {
+    customer: { name, phone, car },
+    time: new Date().toLocaleString(),
+    final: els.finalTotal.textContent,
+    data: {
+      guide: els.guidePrice.value,
+      replace: els.replaceSub.value,
+      cash: els.cashDiscount.value,
+      insurance: els.insurance.value,
+      plate: els.plateFee.value,
+      service: els.serviceFee.value,
+      extend: els.extendWarranty.value,
+      type: els.carType.value,
+      subType: els.subsidyType.value
+    }
+  };
 
-//  saveHistory(saveData);
-//  modal.classList.replace('flex', 'hidden');
+  saveHistory(saveData);
+  modal.classList.replace('flex', 'hidden');
   
 //  const success = await syncToFeishu(saveData);
 //  alert(success ? "✅ 保存并同步飞书成功！" : "⚠️ 本地保存成功");
