@@ -305,38 +305,94 @@ async function syncToFeishu(data) {
 }
 
 // 保存
-document.getElementById('confirmSave').onclick = async () => {
-  const name = document.getElementById('c_name').value.trim();
-  const phone = document.getElementById('c_phone').value.trim();
-  const car = document.getElementById('c_car').value.trim();
-  if (!name || !phone || !car) {
-    alert('请填写完整客户信息');
-    return;
-  }
+//document.getElementById('confirmSave').onclick = async () => {
+ // const name = document.getElementById('c_name').value.trim();
+//  const phone = document.getElementById('c_phone').value.trim();
+//  const car = document.getElementById('c_car').value.trim();
+ // if (!name || !phone || !car) {
+   // alert('请填写完整客户信息');
+   // return;
+  //}
 
-  const saveData = {
-    customer: { name, phone, car },
-    time: new Date().toLocaleString(),
-    final: els.finalTotal.textContent,
-    data: {
-      guide: els.guidePrice.value,
-      replace: els.replaceSub.value,
-      cash: els.cashDiscount.value,
-      insurance: els.insurance.value,
-      plate: els.plateFee.value,
-      service: els.serviceFee.value,
-      extend: els.extendWarranty.value,
-      type: els.carType.value,
-      subType: els.subsidyType.value
-    }
-  };
+//  const saveData = {
+//    customer: { name, phone, car },
+//    time: new Date().toLocaleString(),
+//    final: els.finalTotal.textContent,
+//    data: {
+//      guide: els.guidePrice.value,
+//      replace: els.replaceSub.value,
+//      cash: els.cashDiscount.value,
+//      insurance: els.insurance.value,
+//      plate: els.plateFee.value,
+//      service: els.serviceFee.value,
+//      extend: els.extendWarranty.value,
+//      type: els.carType.value,
+//      subType: els.subsidyType.value
+//    }
+//  };
 
-  saveHistory(saveData);
-  modal.classList.replace('flex', 'hidden');
+//  saveHistory(saveData);
+//  modal.classList.replace('flex', 'hidden');
   
-  const success = await syncToFeishu(saveData);
-  alert(success ? "✅ 保存并同步飞书成功！" : "⚠️ 本地保存成功");
-};
+//  const success = await syncToFeishu(saveData);
+//  alert(success ? "✅ 保存并同步飞书成功！" : "⚠️ 本地保存成功");
+//};
+
+  /**
+ * 提交数据到 Cloudflare Worker（安全方式）
+ */
+async function submitToFeishuSheet(data) {
+  // ⚠️ 替换为你的 Worker URL
+  const workerUrl = "https://feishu-sync-worker.your-name.workers.dev";
+  
+  // 补贴类型映射
+  const subTypeText = {
+    none: "无补贴",
+    scrap: "国补(报废)",
+    replace: "省补(置换)",
+    local: "地补"
+  }[data.data.subType] || "无补贴";
+  
+  try {
+    console.log("开始提交数据到 Worker...");
+    const res = await fetch(workerUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          "客户姓名": data.customer.name,
+          "电话": data.customer.phone,
+          "车型": data.customer.car,
+          "报价时间": data.time,
+          "车辆类型": data.data.type === "ev" ? "新能源车" : "汽油车",
+          "补贴类型": subTypeText,
+          "厂家指导价": Number(data.data.guide),
+          "最终落地价": data.final,
+          "开票价": els.invoicePrice.textContent,
+          "购置税": els.taxPrice.textContent,
+          "政策补贴": els.policySubsidy.textContent
+        }
+      })
+    });
+    
+    const result = await res.json();
+    console.log("Worker 返回:", result);
+    
+    if (result.success) {
+      console.log("✅ 数据同步成功");
+      return true;
+    } else {
+      console.error("❌ Worker 返回错误:", result.message);
+      alert(`飞书同步失败: ${result.message}`);
+      return false;
+    }
+    
+  } catch (error) {
+    console.error("提交失败:", error);
+    alert(`网络错误: ${error.message}`);
+    return false;
+  }
+}
 </script>
 </body>
 </html>
