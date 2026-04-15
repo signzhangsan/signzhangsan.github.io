@@ -24,9 +24,9 @@
         <label class="block mb-1 text-sm font-medium">补贴类型</label>
         <select id="subsidyType" class="w-full border p-2 rounded">
           <option value="none">无补贴</option>
-          <option value="scrap">报废更新（国补12%）</option>
-          <option value="replace" selected>置换更新（省补8%）</option>
-          <option value="local">地方补贴（地补2k or 4k）</option>
+          <option value="scrap">报废更新（国补）</option>
+          <option value="replace" selected>置换更新（省补）</option>
+          <option value="local">地方补贴（地补）</option>
         </select>
       </div>
     </div>
@@ -68,7 +68,7 @@
     <div class="bg-gray-50 p-4 rounded-lg text-sm mt-4">
       <div>开票价：<span id="invoicePrice"></span></div>
       <div>购置税：<span id="taxPrice"></span></div>
-      <div>补贴前(不含厂补)：<span id="beforeSubTotal"></span></div>
+      <div>补贴前：<span id="beforeSubTotal"></span></div>
       <div>政策补贴：<span id="policySubsidy"></span></div>
       <div class="font-bold text-red-600">最终落地：<span id="finalTotal"></span></div>
     </div>
@@ -186,6 +186,7 @@ document.getElementById('copyBtn').onclick = () => {
   const text = `
 📝 汽车报价单
 客户：${document.getElementById('c_car').value || '未填写'}
+类型：${els.carType.value === 'ev' ? '新能源车' : '汽油车'} | ${subTypeText}
 指导价：¥${els.guidePrice.value}
 开票价：${els.invoicePrice.textContent}
 购置税：${els.taxPrice.textContent}
@@ -269,13 +270,13 @@ document.getElementById('closeModal').onclick = () => modal.classList.replace('f
 // ✅ 飞书 Webhook 同步（100%不跨域）
 // ==============================================
  async function syncToFeishu(data) {
-  const WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/0062a65c-c36c-464d-b9ca-b1e89ea3c290";
+  const WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/80a8404f-40a4-43b9-bb26-1a3d3b39e9d5";
 
   const msg = {
     msg_type: "text",
     content: {
       text: `
-【报价单提交@汽车销售报价单 】
+【新汽车报价】
 客户：${data.customer.name}
 电话：${data.customer.phone}
 车型：${data.customer.car}
@@ -335,12 +336,16 @@ document.getElementById('confirmSave').onclick = async () => {
   
   // 同时同步到飞书机器人和多维表格
   const webhookSuccess = await syncToFeishu(saveData);
-  //const sheetSuccess = await submitToFeishuSheet(saveData);
+  const sheetSuccess = await submitToFeishuSheet(saveData);
   
   let message = "";
-  if (webhookSuccess ) {
+  if (webhookSuccess && sheetSuccess) {
     message = "✅ 本地保存成功，已同步到飞书机器人和多维表格！";
-  }  else {
+  } else if (webhookSuccess) {
+    message = "⚠️ 本地保存成功，飞书机器人同步成功，多维表格同步失败";
+  } else if (sheetSuccess) {
+    message = "⚠️ 本地保存成功，多维表格同步成功，飞书机器人同步失败";
+  } else {
     message = "✅ 本地保存成功，飞书同步失败";
   }
   alert(message);
@@ -349,9 +354,9 @@ document.getElementById('confirmSave').onclick = async () => {
   /**
  * 提交数据到 Cloudflare Worker（安全方式）
  */
-//async function submitToFeishuSheet(data) {
+async function submitToFeishuSheet(data) {
   // ⚠️ 替换为你的 Worker URL
-  //const workerUrl = "https://car.zhj260810.dev";
+  const workerUrl = "https://car.zhj260810.dev";
   
   // 补贴类型映射
   const subTypeText = {
