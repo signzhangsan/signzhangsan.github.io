@@ -24,9 +24,9 @@
         <label class="block mb-1 text-sm font-medium">补贴类型</label>
         <select id="subsidyType" class="w-full border p-2 rounded">
           <option value="none">无补贴</option>
-          <option value="scrap">报废更新（国补）</option>
-          <option value="replace" selected>置换更新（省补）</option>
-          <option value="local">地方补贴（地补）</option>
+          <option value="scrap">报废更新（国补12%）</option>
+          <option value="replace" selected>置换更新（省补8%）</option>
+          <option value="local">地方补贴（地补2k or 4k）</option>
         </select>
       </div>
     </div>
@@ -270,13 +270,13 @@ document.getElementById('closeModal').onclick = () => modal.classList.replace('f
 // ✅ 飞书 Webhook 同步（100%不跨域）
 // ==============================================
  async function syncToFeishu(data) {
-  const WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/80a8404f-40a4-43b9-bb26-1a3d3b39e9d5";
+  const WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/0062a65c-c36c-464d-b9ca-b1e89ea3c290";
 
   const msg = {
     msg_type: "text",
     content: {
       text: `
-【新汽车报价】
+【报价单提交 @汽车销售报价单 】
 客户：${data.customer.name}
 电话：${data.customer.phone}
 车型：${data.customer.car}
@@ -336,7 +336,7 @@ document.getElementById('confirmSave').onclick = async () => {
   
   // 同时同步到飞书机器人和多维表格
   const webhookSuccess = await syncToFeishu(saveData);
-  const sheetSuccess = await submitToFeishuSheet(saveData);
+  //const sheetSuccess = await submitToFeishuSheet(saveData);
   
   let message = "";
   if (webhookSuccess && sheetSuccess) {
