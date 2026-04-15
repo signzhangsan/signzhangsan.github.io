@@ -339,10 +339,8 @@ document.getElementById('confirmSave').onclick = async () => {
   const sheetSuccess = await submitToFeishuSheet(saveData);
   
   let message = "";
-  if (webhookSuccess && sheetSuccess) {
-    message = "✅ 本地保存成功，已同步到飞书机器人和多维表格！";
-  } else if (webhookSuccess) {
-    message = "⚠️ 本地保存成功，飞书机器人同步成功，多维表格同步失败";
+  if (webhookSuccess) {
+    message = "✅ 本地保存成功，飞书机器人同步成功";
   } else if (sheetSuccess) {
     message = "⚠️ 本地保存成功，多维表格同步成功，飞书机器人同步失败";
   } else {
