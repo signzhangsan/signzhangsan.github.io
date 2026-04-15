@@ -24,9 +24,9 @@
         <label class="block mb-1 text-sm font-medium">补贴类型</label>
         <select id="subsidyType" class="w-full border p-2 rounded">
           <option value="none">无补贴</option>
-          <option value="scrap">报废更新（国补）</option>
-          <option value="replace" selected>置换更新（省补）</option>
-          <option value="local">地方补贴（地补）</option>
+          <option value="scrap">报废更新（国补12%）</option>
+          <option value="replace" selected>置换更新（省补8%）</option>
+          <option value="local">地方补贴（地补2k or 4k）</option>
         </select>
       </div>
     </div>
@@ -68,7 +68,7 @@
     <div class="bg-gray-50 p-4 rounded-lg text-sm mt-4">
       <div>开票价：<span id="invoicePrice"></span></div>
       <div>购置税：<span id="taxPrice"></span></div>
-      <div>补贴前：<span id="beforeSubTotal"></span></div>
+      <div>补贴前(不含厂补)：<span id="beforeSubTotal"></span></div>
       <div>政策补贴：<span id="policySubsidy"></span></div>
       <div class="font-bold text-red-600">最终落地：<span id="finalTotal"></span></div>
     </div>
@@ -186,7 +186,6 @@ document.getElementById('copyBtn').onclick = () => {
   const text = `
 📝 汽车报价单
 客户：${document.getElementById('c_car').value || '未填写'}
-类型：${els.carType.value === 'ev' ? '新能源车' : '汽油车'} | ${subTypeText}
 指导价：¥${els.guidePrice.value}
 开票价：${els.invoicePrice.textContent}
 购置税：${els.taxPrice.textContent}
