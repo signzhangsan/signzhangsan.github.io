@@ -336,7 +336,7 @@ document.getElementById('confirmSave').onclick = async () => {
   
   // 同时同步到飞书机器人和多维表格
   const webhookSuccess = await syncToFeishu(saveData);
-  //const sheetSuccess = await submitToFeishuSheet(saveData);
+  const sheetSuccess = await submitToFeishuSheet(saveData);
   
   let message = "";
   if (webhookSuccess && sheetSuccess) {
